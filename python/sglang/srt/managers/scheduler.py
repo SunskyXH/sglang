@@ -4081,6 +4081,7 @@ class Scheduler(
                 retries.cancel(req.rid)
         self.waiting_queue = [x for x in self.waiting_queue if x not in can_run_set]
         if adder.preempt_list:
+            self.tp_worker.on_reqs_retracted(adder.preempt_list)
             for req in adder.preempt_list:
                 self._add_request_to_queue(req)
 
@@ -4224,6 +4225,7 @@ class Scheduler(
                 else None
             )
             retracted_reqs, new_token_ratio, reqs_to_abort = batch.retract_decode()
+            self.tp_worker.on_reqs_retracted(retracted_reqs)
             new_available_tokens = self.token_to_kv_pool_allocator.available_size()
             new_token_gained = new_available_tokens - old_available_tokens
             mamba_num_gained = (
@@ -5513,6 +5515,7 @@ class Scheduler(
                 hisparse_coordinator=self.hisparse_coordinator,
                 offload_kv=False,
             )
+            self.tp_worker.on_reqs_retracted(retract_reqs)
         self.running_batch.reqs = []
         for req in retract_reqs:
             if self.disaggregation_mode == DisaggregationMode.DECODE:
